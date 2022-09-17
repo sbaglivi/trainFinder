@@ -18,7 +18,7 @@ stazioni = {
     "napoliCentrale" : 830009218,
     "napoliAfragola" : 830009988,
     "salerno" :  830009818,
-    "vallo" : 830011709
+    "valloDellaLucania" : 830011709
 }
 
 dataPartenza = "2022-09-23"
@@ -70,8 +70,6 @@ def findTrains(origin, destination, departureDate, departureTime):
 
     response = requests.request("POST", url, json=payload, headers=headers)
     return response
-def sayHello():
-    print('hello')
 
 #response = findTrains(stazioni['milanoCentrale'], stazioni['firenze'], dataPartenza, oraPartenza)
 #print(response.text)

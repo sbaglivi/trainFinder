@@ -34,6 +34,7 @@ def validateOptions(args):
              
 
 validateOptions(sys.argv[1:])
+"""
 result = {
         'success' : True,
         'message' : f"Searching trains from {sys.argv[1]} to {sys.argv[2]} departing on {sys.argv[3]} after {sys.argv[4]}"
@@ -41,15 +42,20 @@ result = {
 print(json.dumps(result))
 sys.exit()
 print(f"Searching trains from {sys.argv[1]} to {sys.argv[2]} departing on {sys.argv[3]} after {sys.argv[4]}")
+"""
 adjustedDate = datetime.strptime(sys.argv[3], "%d-%m-%y").strftime("%Y-%m-%d")
-print(adjustedDate)
 
 
 dataPartenza = "2022-09-23"
 oraPartenza = "16:00"
 
-response = findTrains(stazioni['milanoCentrale'], stazioni['firenze'], dataPartenza, oraPartenza)
+#response = findTrains(stazioni['milanoCentrale'], stazioni['firenze'], dataPartenza, oraPartenza)
+response = findTrains(stazioni[sys.argv[1]], stazioni[sys.argv[2]], adjustedDate, sys.argv[4]+":00")
 json_data = response.json()
+if 'solutions' not in json_data.keys():
+    #print(json.dumps({'error': f'No trains found for search from {sys.argv[1]} to {sys.argv[2]} departing on {sys.argv[3]} after {sys.argv[4]}', 'results':[]}))
+    json.dumps([])
+    sys.exit()
 #json_data = pd.read_json('data.json')
 
 
@@ -92,12 +98,28 @@ def findPrices(row):
     row['senior'] = pricesFound['senior']
     row['adult'] = pricesFound['adult']
     return row
+
+durationPattern = re.compile('(\d+)(?:h )(\d+)(?:min)')
+def formatDuration(s):
+    return ":".join(durationPattern.search(s).groups())
+
 def processData(jsonData):
     df = pd.json_normalize(jsonData['solutions'])
     solutions = df[df['solution.status'] == "SALEABLE"][['solution.id','solution.departureTime','solution.arrivalTime','solution.duration','solution.origin','solution.destination','grids']]
-    solutionWithPrices = solutions.apply(findPrices, axis=1);
-    print(solutionWithPrices[['solution.departureTime','solution.arrivalTime','solution.duration','young','senior','adult']])
-    return solutionWithPrices
+    solutions['solution.departureTime'] = pd.to_datetime(solutions['solution.departureTime']);
+    solutions['solution.arrivalTime'] = pd.to_datetime(solutions['solution.arrivalTime']);
+    solutions['departureTime'] = solutions['solution.departureTime'].dt.strftime('%H:%M')
+    solutions['arrivalTime'] = solutions['solution.arrivalTime'].dt.strftime('%H:%M')
+    solutions['departureDate'] = solutions['solution.departureTime'].dt.strftime('%d/%m')
+    #solutions.sameDay = solutions['solution.departureTime'].dt.stftime('%Y-%m-%d') == adjustedDate
+    solutions.rename(columns={'solution.id':'id', 'solution.duration':'duration'}, inplace=True)
+    solutions['duration'] = solutions['duration'].apply(formatDuration)
+    solutionWithPrices = solutions.apply(findPrices, axis=1)
+    #print(solutionWithPrices[['solution.departureTime','solution.arrivalTime','solution.duration','young','senior','adult']])
+    return solutionWithPrices[['id', 'departureDate', 'departureTime', 'arrivalTime', 'duration', 'young', 'senior', 'adult']]
 
 
-processData(json_data)
+processedData = processData(json_data)
+#print(json.dumps({'error': '', 'results': processedData.to_json(orient='records')}))
+#print(json.dumps({'error': '', 'results': processedData.to_dict('records')}))
+print(json.dumps(processedData.to_dict('records')))
