@@ -9,7 +9,7 @@ def departureTimeFromTimestring(string):
 #trainData['departureTime'] = departureTimeFromTimestring(trainDiv['data-train-timestamp'])
 
 
-def getDataFromHtml(html, dayMonth):
+def getDataFromHtml(html, passengers):
     pricePattern = re.compile('\d+\.?\d+')
     timePattern = re.compile('\d{2}:\d{2}')
     allData = []
@@ -18,7 +18,7 @@ def getDataFromHtml(html, dayMonth):
     for trainDiv in trainDivs:
         trainData = {}
         trainData['id'] = trainDiv['data-train-number'] # train number
-        trainData['departureDate'] = dayMonth ## temp ??
+        #trainData['departureDate'] = dayMonth 
         times = trainDiv.find(class_='layout__item').find('p').text
         [trainData['departureTime'],trainData['arrivalTime']] = times.split(' > ')
         trainData['duration'] = trainDiv['data-train-duration']
@@ -36,7 +36,9 @@ def getDataFromHtml(html, dayMonth):
                 except AttributeError:
                     price  = 'sold out'
                 #prices.append(price)
-        trainData['minPrice'] = minPrice
+        trainData['minIndividualPrice'] = minPrice
+        trainData['minPrice'] = minPrice*passengers
+        trainData['company'] = 'italo'
         #trainData['prices'] = prices
         allData.append(trainData)
     return allData
@@ -50,7 +52,7 @@ def openFileAndGetDataFromHtml(filePath, dayMonth):
         for trainDiv in trainDivs:
             trainData = {}
             trainData['id'] = trainDiv['data-train-number'] # train number
-            trainData['departureDate'] = dayMonth ## temp ??
+            #trainData['departureDate'] = dayMonth 
             times = trainDiv.find(class_='layout__item').find('p').text
             [trainData['departureTime'],trainData['arrivalTime']] = times.split(' > ')
             trainData['duration'] = trainDiv['data-train-duration']
@@ -69,7 +71,8 @@ def openFileAndGetDataFromHtml(filePath, dayMonth):
                     except AttributeError:
                         price  = 'sold out'
                     prices.append(price)
-            trainData['minPrice'] = minPrice
+            trainData['minIndividualPrice'] = minPrice
+            trainData['minPrice'] = minPrice*passengers
             trainData['prices'] = prices
             allData.append(trainData)
     return allData

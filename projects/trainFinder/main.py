@@ -4,8 +4,8 @@ from trenitaliaRequest import *
 from datetime import datetime
 
 def validateOptions(args):
-    if (len(args) < 4):
-        print(f"Expected 4 arguments (origin: string, destination: string, dataPartenza: dd-mm-yy oraPartenza: hh). \
+    if (len(args) < 5):
+        print(f"Expected 5 arguments (origin: string, destination: string, dataPartenza: dd-mm-yy oraPartenza: hh, passengers: 3 0-9 numbers for Adults/Seniors/Youngs). \
                 Received {len(args)}")
         sys.exit()
     if (args[0] not in stazioni.keys() or args[1] not in stazioni.keys()):
@@ -31,6 +31,9 @@ def validateOptions(args):
     if not hourPattern.match(args[3]):
         print(f"{args[3]} is not a valid format for the departure time. Accepted is hh).")
         sys.exit()
+    if not re.compile("[1-9][0-9]{2}|[0-9][1-9][0-9]|[0-9]{2}[1-9]").match(args[4]):
+        print(f"{args[4]} is not a valid format for passengers. Accepted is \d\d\d with at least 1 != 0.")
+        sys.exit()
              
 
 validateOptions(sys.argv[1:])
@@ -43,7 +46,13 @@ print(json.dumps(result))
 sys.exit()
 print(f"Searching trains from {sys.argv[1]} to {sys.argv[2]} departing on {sys.argv[3]} after {sys.argv[4]}")
 """
-adjustedDate = datetime.strptime(sys.argv[3], "%d-%m-%y").strftime("%Y-%m-%d")
+trainDateObject = datetime.strptime(sys.argv[3], "%d-%m-%y")
+adjustedDate = trainDateObject.strftime("%Y-%m-%d")
+
+adults = int(sys.argv[5][0])
+seniors = int(sys.argv[5][1])
+youngs = int(sys.argv[5][2])
+
 
 
 dataPartenza = "2022-09-23"
@@ -58,6 +67,20 @@ if 'solutions' not in json_data.keys():
     sys.exit()
 #json_data = pd.read_json('data.json')
 
+def minValid(*values):
+    validValues = list(filter(lambda x: x != -1,values))
+    if not len(validValues):
+        raise Exception("Not enough tickets on train")
+    return min(validValues)
+
+def calculateMinPrice(row):
+    try:
+        if row['adult'] == -1:
+            raise Exception("Not enough tickets on train")
+        minPrice = adults * row['adult'] + seniors * minValid(row['senior'], row['adult']) + youngs * minValid(row['young'], row['adult'])
+        return minPrice
+    except Exception as e:
+        return '/' 
 
 def findPrices(row):
     priorityOrder = ['STANDARD', 'STANDARD AREA SILENZIO', 'PREMIUM', 'BUSINESS', 'BUSINESS AREA SILENZIO'] 
@@ -97,6 +120,7 @@ def findPrices(row):
     row['young'] = pricesFound['young']
     row['senior'] = pricesFound['senior']
     row['adult'] = pricesFound['adult']
+    row['minPrice'] = calculateMinPrice(row)
     return row
 
 durationPattern = re.compile('(\d+)(?:h )(\d+)(?:min)')
@@ -114,9 +138,11 @@ def processData(jsonData):
     #solutions.sameDay = solutions['solution.departureTime'].dt.stftime('%Y-%m-%d') == adjustedDate
     solutions.rename(columns={'solution.id':'id', 'solution.duration':'duration'}, inplace=True)
     solutions['duration'] = solutions['duration'].apply(formatDuration)
-    solutionWithPrices = solutions.apply(findPrices, axis=1)
-    #print(solutionWithPrices[['solution.departureTime','solution.arrivalTime','solution.duration','young','senior','adult']])
-    return solutionWithPrices[['id', 'departureDate', 'departureTime', 'arrivalTime', 'duration', 'young', 'senior', 'adult']]
+    solutionsWithPrices = solutions.apply(findPrices, axis=1)
+    solutionsWithPrices['company'] = 'trenitalia';
+    sameDaySolutions = solutionsWithPrices[solutionsWithPrices['departureDate'] == trainDateObject.strftime("%d/%m")]
+    # return solutionsWithPrices[['id', 'departureDate', 'departureTime', 'arrivalTime', 'duration', 'young', 'senior', 'adult']]
+    return sameDaySolutions[['id', 'departureTime', 'arrivalTime', 'duration', 'young', 'senior', 'adult','company', 'minPrice']]
 
 
 processedData = processData(json_data)

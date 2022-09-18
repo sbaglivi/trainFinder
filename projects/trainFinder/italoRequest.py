@@ -8,14 +8,24 @@ promoCodes = [
 ]
 
 stazioni = {
+    'torinoPortaNuova' : 'TOP',
+    'torinaPortaSusa' : 'OUE',
     'milanoCentrale' : 'MC_',
-    'firenze' : 'SMN'
+    'reggioEmilia' : 'AAV',
+    'bologna' : 'BC_',
+    'firenze' : 'SMN',
+    'romaTermini': 'RMT',
+    'romaTiburtina' : 'RTB',
+    'napoliCentrale' : 'NAC',
+    'napoliAfragola' : 'NAF',
+    'salerno' : 'SAL',
+    'valloDellaLucania' : 'VLH'
 }
 
 
 def validateOptions(args):
-    if (len(args) < 4):
-        print(f"Expected 4 arguments (origin: string, destination: string, dataPartenza: dd-mm-yy, passengers A(dults)S(eniors)Y(oungs)). \
+    if (len(args) < 5):
+        print(f"Expected 5 arguments (origin: string, destination: string, dataPartenza: dd-mm-yy, oraPartenza: hh, passengers A(dults)S(eniors)Y(oungs)). \
                 Received {len(args)}")
         sys.exit()
     if (args[0] not in stazioni.keys() or args[1] not in stazioni.keys()):
@@ -37,8 +47,11 @@ def validateOptions(args):
     if not validateDate(args[2]):
         print(f"Invalid date. Make sure the format is dd-mm-yy and the date is in the future.")
         sys.exit()
-    passengerPattern = re.compile("\d{3}")
-    if not passengerPattern.match(args[3]):
+    if not re.compile("[01][0-9]|2[0-3]").match(args[3]):
+        print(f"Invalid hour. Format should be hh")
+        sys.exit()
+    passengerPattern = re.compile("[1-9][0-9]{2}|[0-9][1-9][0-9]|[0-9]{2}[1-9]")
+    if not passengerPattern.match(args[4]):
         print(f"{args[3]} is not a valid format for passengers: accepted is ASY in digits e.g. 100")
         sys.exit()
              
@@ -49,14 +62,15 @@ validateOptions(sys.argv[1:])
 origin = stazioni[sys.argv[1]]
 destination = stazioni[sys.argv[2]]
 ticketDate = sys.argv[3]
-adults = sys.argv[4][0]
-senior = sys.argv[4][1]
-young = sys.argv[4][2]
+ticketTime = sys.argv[4]
+adults = int(sys.argv[5][0])
+seniors = int(sys.argv[5][1])
+youngs = int(sys.argv[5][2])
 
 """
 adults = 1
-senior = 0
-young = 0
+seniors = 0
+youngs = 0
 origin = stazioni['milanoCentrale']
 destination = stazioni['firenze']
 ticketDate = '25-09-22'
@@ -80,9 +94,9 @@ ticketDateObject = datetime.strptime(ticketDate,'%d-%m-%y')
 yearMonth = ticketDateObject.strftime('%Y-%m')
 promoCode = getPromoCode()
 
-#print(origin, destination, day, yearMonth, adults, senior, young, promoCode)
+#print(origin, destination, day, yearMonth, adults, seniors, youngs, promoCode)
 
-payload = f"__EVENTTARGET=&__EVENTARGUMENT=&__VIEWSTATE=%2FwEPDwUBMGQYAQUeX19Db250cm9sc1JlcXVpcmVQb3N0QmFja0tleV9fFgQF3gFSZXN0eWxpbmdNYXN0ZXJIZWFkZXJJbXByZXNhUmVzdHlsaW5nQm9va2luZ1NlbGV6aW9uZVRyZW5vQVZpZXckTWFzdGVySGVhZGVyR2xvYmFsTWVudUltcHJlc2FSZXN0eWxpbmdCb29raW5nU2VsZXppb25lVHJlbm9BVmlldyRNYXN0ZXJIZWFkZXJHbG9iYWxNZW51QWdlbnRMb2dpbkltcHJlc2FSZXN0eWxpbmdCb29raW5nU2VsZXppb25lVHJlbm9BVmlldyRDaGVja0JveFJlbWVtYmVyTWUFwwFNYXN0ZXJIZWFkZXJSZXN0eWxpbmdCb29raW5nU2VsZXppb25lVHJlbm9BVmlldyRNYXN0ZXJIZWFkZXJHbG9iYWxNZW51UmVzdHlsaW5nQm9va2luZ1NlbGV6aW9uZVRyZW5vQVZpZXckTWFzdGVySGVhZGVyR2xvYmFsTWVudU1lbWJlckxvZ2luUmVzdHlsaW5nQm9va2luZ1NlbGV6aW9uZVRyZW5vQVZpZXckQ2hlY2tCb3hSZW1haW5Mb2dnZWQFwQFNYXN0ZXJIZWFkZXJSZXN0eWxpbmdCb29raW5nU2VsZXppb25lVHJlbm9BVmlldyRNYXN0ZXJIZWFkZXJHbG9iYWxNZW51UmVzdHlsaW5nQm9va2luZ1NlbGV6aW9uZVRyZW5vQVZpZXckTWFzdGVySGVhZGVyR2xvYmFsTWVudU1lbWJlckxvZ2luUmVzdHlsaW5nQm9va2luZ1NlbGV6aW9uZVRyZW5vQVZpZXckQ2hlY2tCb3hSZW1lbWJlck1lBcABTWFzdGVySGVhZGVyUmVzdHlsaW5nQm9va2luZ1NlbGV6aW9uZVRyZW5vQVZpZXckTWFzdGVySGVhZGVyR2xvYmFsTWVudVJlc3R5bGluZ0Jvb2tpbmdTZWxlemlvbmVUcmVub0FWaWV3JE1hc3RlckhlYWRlckdsb2JhbE1lbnVBZ2VudExvZ2luUmVzdHlsaW5nQm9va2luZ1NlbGV6aW9uZVRyZW5vQVZpZXckQ2hlY2tCb3hSZW1lbWJlck1lDr6cBD4zY3%2Fi565gwK%2BqNwmzH7c%3D&pageToken=&MasterHeaderRestylingBookingSelezioneTrenoAView%24MasterHeaderGlobalMenuRestylingBookingSelezioneTrenoAView%24MasterHeaderGlobalMenuMemberLoginRestylingBookingSelezioneTrenoAView%24TextBoxUserID=&MasterHeaderRestylingBookingSelezioneTrenoAView%24MasterHeaderGlobalMenuRestylingBookingSelezioneTrenoAView%24MasterHeaderGlobalMenuMemberLoginRestylingBookingSelezioneTrenoAView%24PasswordFieldPassword=&MasterHeaderRestylingBookingSelezioneTrenoAView%24MasterHeaderGlobalMenuRestylingBookingSelezioneTrenoAView%24MasterHeaderGlobalMenuMemberLoginRestylingBookingSelezioneTrenoAView%24HiddenSocialLoginRequested=&MasterHeaderRestylingBookingSelezioneTrenoAView%24MasterHeaderGlobalMenuRestylingBookingSelezioneTrenoAView%24MasterHeaderGlobalMenuMemberLoginRestylingBookingSelezioneTrenoAView%24TextBoxUserIDSocial=&MasterHeaderRestylingBookingSelezioneTrenoAView%24MasterHeaderGlobalMenuRestylingBookingSelezioneTrenoAView%24MasterHeaderGlobalMenuMemberLoginRestylingBookingSelezioneTrenoAView%24TextBoxPasswordSocial=&ModuloRicercaBookingRicercaRestylingBookingSelezioneTrenoAView%24ButtonChangeSearchInBookingFlow=&ModuloRicercaBookingRicercaRestylingBookingSelezioneTrenoAView%24HIDDENBSJ=true&ModuloRicercaBookingRicercaRestylingBookingSelezioneTrenoAView%24DropDownListSearchBy=columnView&ModuloRicercaBookingRicercaRestylingBookingSelezioneTrenoAView%24DropDownListFareTypes=ST&ModuloRicercaBookingRicercaRestylingBookingSelezioneTrenoAView%24RadioButtonMarketStructure=OneWay&ModuloRicercaBookingRicercaRestylingBookingSelezioneTrenoAView%24TextBoxMarketOrigin1={origin}&ModuloRicercaBookingRicercaRestylingBookingSelezioneTrenoAView%24TextBoxMarketDestination1={destination}&ModuloRicercaBookingRicercaRestylingBookingSelezioneTrenoAView%24DropDownListMarketDay1={day}&ModuloRicercaBookingRicercaRestylingBookingSelezioneTrenoAView%24DropDownListMarketMonth1={yearMonth}&ModuloRicercaBookingRicercaRestylingBookingSelezioneTrenoAView%24DropDownDepartureTimeHoursBegin_1=0&ModuloRicercaBookingRicercaRestylingBookingSelezioneTrenoAView%24DropDownDepartureTimeHoursEnd_1=24&ModuloRicercaBookingRicercaRestylingBookingSelezioneTrenoAView%24DropDownListMarketDay2={day}&ModuloRicercaBookingRicercaRestylingBookingSelezioneTrenoAView%24DropDownListMarketMonth2={yearMonth}&ModuloRicercaBookingRicercaRestylingBookingSelezioneTrenoAView%24DropDownDepartureTimeHoursBegin_2=0&ModuloRicercaBookingRicercaRestylingBookingSelezioneTrenoAView%24DropDownDepartureTimeHoursEnd_2=24&ModuloRicercaBookingRicercaRestylingBookingSelezioneTrenoAView%24DropDownListPassengerType_ADT={adults}&ModuloRicercaBookingRicercaRestylingBookingSelezioneTrenoAView%24DropDownListPassengerType_CHD=0&ModuloRicercaBookingRicercaRestylingBookingSelezioneTrenoAView%24DropDownListPassengerType_SNR={senior}&ModuloRicercaBookingRicercaRestylingBookingSelezioneTrenoAView%24DropDownListPassengerType_YNG={young}&ModuloRicercaBookingRicercaRestylingBookingSelezioneTrenoAView%24PetTextBox=0&promocode={promoCode}&BookingGrigliaTreniRestylingBookingSelezioneTrenoAView%24AvailabilitySearchInputRestylingBookingSelezioneTrenoAView%24InfantTextBox=0&BookingGrigliaTreniRestylingBookingSelezioneTrenoAView%24AvailabilitySearchInputRestylingBookingSelezioneTrenoAView%24PetTextBox=0&BookingGrigliaTreniRestylingBookingSelezioneTrenoAView%24AvailabilitySearchInputRestylingBookingSelezioneTrenoAView%24DropDownListFareTypes=ST&BookingGrigliaTreniRestylingBookingSelezioneTrenoAView%24AvailabilitySearchInputRestylingBookingSelezioneTrenoAView%24DropDownListSearchBy=&BookingGrigliaTreniRestylingBookingSelezioneTrenoAView%24AvailabilitySearchInputRestylingBookingSelezioneTrenoAView%24RadioButtonMarketStructure=OneWay&BookingGrigliaTreniRestylingBookingSelezioneTrenoAView%24PromoCodeRestylingBookingSelezioneTrenoAView%24TextBoxPromoCode=&BookingGrigliaTreniRestylingBookingSelezioneTrenoAView%24AvailabilitySearchInputRestylingBookingSelezioneTrenoAView%24HiddenDateToSearch=&BookingGrigliaTreniRestylingBookingSelezioneTrenoAView%24AvailabilitySearchInputRestylingBookingSelezioneTrenoAView%24HiddenCurrentMarketIndexForChangeDatetoSearch=1&BookingGrigliaTreniRestylingBookingSelezioneTrenoAView%24HiddenFieldBloccaPrezzo=&ShareBookingControlRestylingBookingSelezioneTrenoAView%24HiddenFieldSellKeys=&ShareBookingControlRestylingBookingSelezioneTrenoAView%24HiddenFieldFarePrice=&ShareBookingControlRestylingBookingSelezioneTrenoAView%24TextBoxReceiverEmail=&ShareBookingControlRestylingBookingSelezioneTrenoAView%24TextBoxSenderName=&ShareBookingControlRestylingBookingSelezioneTrenoAView%24TextBoxSenderEmail=&ShareBookingControlRestylingBookingSelezioneTrenoAView%24TextBoxMessage="
+payload = f"__EVENTTARGET=&__EVENTARGUMENT=&__VIEWSTATE=%2FwEPDwUBMGQYAQUeX19Db250cm9sc1JlcXVpcmVQb3N0QmFja0tleV9fFgQF3gFSZXN0eWxpbmdNYXN0ZXJIZWFkZXJJbXByZXNhUmVzdHlsaW5nQm9va2luZ1NlbGV6aW9uZVRyZW5vQVZpZXckTWFzdGVySGVhZGVyR2xvYmFsTWVudUltcHJlc2FSZXN0eWxpbmdCb29raW5nU2VsZXppb25lVHJlbm9BVmlldyRNYXN0ZXJIZWFkZXJHbG9iYWxNZW51QWdlbnRMb2dpbkltcHJlc2FSZXN0eWxpbmdCb29raW5nU2VsZXppb25lVHJlbm9BVmlldyRDaGVja0JveFJlbWVtYmVyTWUFwwFNYXN0ZXJIZWFkZXJSZXN0eWxpbmdCb29raW5nU2VsZXppb25lVHJlbm9BVmlldyRNYXN0ZXJIZWFkZXJHbG9iYWxNZW51UmVzdHlsaW5nQm9va2luZ1NlbGV6aW9uZVRyZW5vQVZpZXckTWFzdGVySGVhZGVyR2xvYmFsTWVudU1lbWJlckxvZ2luUmVzdHlsaW5nQm9va2luZ1NlbGV6aW9uZVRyZW5vQVZpZXckQ2hlY2tCb3hSZW1haW5Mb2dnZWQFwQFNYXN0ZXJIZWFkZXJSZXN0eWxpbmdCb29raW5nU2VsZXppb25lVHJlbm9BVmlldyRNYXN0ZXJIZWFkZXJHbG9iYWxNZW51UmVzdHlsaW5nQm9va2luZ1NlbGV6aW9uZVRyZW5vQVZpZXckTWFzdGVySGVhZGVyR2xvYmFsTWVudU1lbWJlckxvZ2luUmVzdHlsaW5nQm9va2luZ1NlbGV6aW9uZVRyZW5vQVZpZXckQ2hlY2tCb3hSZW1lbWJlck1lBcABTWFzdGVySGVhZGVyUmVzdHlsaW5nQm9va2luZ1NlbGV6aW9uZVRyZW5vQVZpZXckTWFzdGVySGVhZGVyR2xvYmFsTWVudVJlc3R5bGluZ0Jvb2tpbmdTZWxlemlvbmVUcmVub0FWaWV3JE1hc3RlckhlYWRlckdsb2JhbE1lbnVBZ2VudExvZ2luUmVzdHlsaW5nQm9va2luZ1NlbGV6aW9uZVRyZW5vQVZpZXckQ2hlY2tCb3hSZW1lbWJlck1lDr6cBD4zY3%2Fi565gwK%2BqNwmzH7c%3D&pageToken=&MasterHeaderRestylingBookingSelezioneTrenoAView%24MasterHeaderGlobalMenuRestylingBookingSelezioneTrenoAView%24MasterHeaderGlobalMenuMemberLoginRestylingBookingSelezioneTrenoAView%24TextBoxUserID=&MasterHeaderRestylingBookingSelezioneTrenoAView%24MasterHeaderGlobalMenuRestylingBookingSelezioneTrenoAView%24MasterHeaderGlobalMenuMemberLoginRestylingBookingSelezioneTrenoAView%24PasswordFieldPassword=&MasterHeaderRestylingBookingSelezioneTrenoAView%24MasterHeaderGlobalMenuRestylingBookingSelezioneTrenoAView%24MasterHeaderGlobalMenuMemberLoginRestylingBookingSelezioneTrenoAView%24HiddenSocialLoginRequested=&MasterHeaderRestylingBookingSelezioneTrenoAView%24MasterHeaderGlobalMenuRestylingBookingSelezioneTrenoAView%24MasterHeaderGlobalMenuMemberLoginRestylingBookingSelezioneTrenoAView%24TextBoxUserIDSocial=&MasterHeaderRestylingBookingSelezioneTrenoAView%24MasterHeaderGlobalMenuRestylingBookingSelezioneTrenoAView%24MasterHeaderGlobalMenuMemberLoginRestylingBookingSelezioneTrenoAView%24TextBoxPasswordSocial=&ModuloRicercaBookingRicercaRestylingBookingSelezioneTrenoAView%24ButtonChangeSearchInBookingFlow=&ModuloRicercaBookingRicercaRestylingBookingSelezioneTrenoAView%24HIDDENBSJ=true&ModuloRicercaBookingRicercaRestylingBookingSelezioneTrenoAView%24DropDownListSearchBy=columnView&ModuloRicercaBookingRicercaRestylingBookingSelezioneTrenoAView%24DropDownListFareTypes=ST&ModuloRicercaBookingRicercaRestylingBookingSelezioneTrenoAView%24RadioButtonMarketStructure=OneWay&ModuloRicercaBookingRicercaRestylingBookingSelezioneTrenoAView%24TextBoxMarketOrigin1={origin}&ModuloRicercaBookingRicercaRestylingBookingSelezioneTrenoAView%24TextBoxMarketDestination1={destination}&ModuloRicercaBookingRicercaRestylingBookingSelezioneTrenoAView%24DropDownListMarketDay1={day}&ModuloRicercaBookingRicercaRestylingBookingSelezioneTrenoAView%24DropDownListMarketMonth1={yearMonth}&ModuloRicercaBookingRicercaRestylingBookingSelezioneTrenoAView%24DropDownDepartureTimeHoursBegin_1=0&ModuloRicercaBookingRicercaRestylingBookingSelezioneTrenoAView%24DropDownDepartureTimeHoursEnd_1=24&ModuloRicercaBookingRicercaRestylingBookingSelezioneTrenoAView%24DropDownListMarketDay2={day}&ModuloRicercaBookingRicercaRestylingBookingSelezioneTrenoAView%24DropDownListMarketMonth2={yearMonth}&ModuloRicercaBookingRicercaRestylingBookingSelezioneTrenoAView%24DropDownDepartureTimeHoursBegin_2=0&ModuloRicercaBookingRicercaRestylingBookingSelezioneTrenoAView%24DropDownDepartureTimeHoursEnd_2=24&ModuloRicercaBookingRicercaRestylingBookingSelezioneTrenoAView%24DropDownListPassengerType_ADT={adults}&ModuloRicercaBookingRicercaRestylingBookingSelezioneTrenoAView%24DropDownListPassengerType_CHD=0&ModuloRicercaBookingRicercaRestylingBookingSelezioneTrenoAView%24DropDownListPassengerType_SNR={seniors}&ModuloRicercaBookingRicercaRestylingBookingSelezioneTrenoAView%24DropDownListPassengerType_YNG={youngs}&ModuloRicercaBookingRicercaRestylingBookingSelezioneTrenoAView%24PetTextBox=0&promocode={promoCode}&BookingGrigliaTreniRestylingBookingSelezioneTrenoAView%24AvailabilitySearchInputRestylingBookingSelezioneTrenoAView%24InfantTextBox=0&BookingGrigliaTreniRestylingBookingSelezioneTrenoAView%24AvailabilitySearchInputRestylingBookingSelezioneTrenoAView%24PetTextBox=0&BookingGrigliaTreniRestylingBookingSelezioneTrenoAView%24AvailabilitySearchInputRestylingBookingSelezioneTrenoAView%24DropDownListFareTypes=ST&BookingGrigliaTreniRestylingBookingSelezioneTrenoAView%24AvailabilitySearchInputRestylingBookingSelezioneTrenoAView%24DropDownListSearchBy=&BookingGrigliaTreniRestylingBookingSelezioneTrenoAView%24AvailabilitySearchInputRestylingBookingSelezioneTrenoAView%24RadioButtonMarketStructure=OneWay&BookingGrigliaTreniRestylingBookingSelezioneTrenoAView%24PromoCodeRestylingBookingSelezioneTrenoAView%24TextBoxPromoCode=&BookingGrigliaTreniRestylingBookingSelezioneTrenoAView%24AvailabilitySearchInputRestylingBookingSelezioneTrenoAView%24HiddenDateToSearch=&BookingGrigliaTreniRestylingBookingSelezioneTrenoAView%24AvailabilitySearchInputRestylingBookingSelezioneTrenoAView%24HiddenCurrentMarketIndexForChangeDatetoSearch=1&BookingGrigliaTreniRestylingBookingSelezioneTrenoAView%24HiddenFieldBloccaPrezzo=&ShareBookingControlRestylingBookingSelezioneTrenoAView%24HiddenFieldSellKeys=&ShareBookingControlRestylingBookingSelezioneTrenoAView%24HiddenFieldFarePrice=&ShareBookingControlRestylingBookingSelezioneTrenoAView%24TextBoxReceiverEmail=&ShareBookingControlRestylingBookingSelezioneTrenoAView%24TextBoxSenderName=&ShareBookingControlRestylingBookingSelezioneTrenoAView%24TextBoxSenderEmail=&ShareBookingControlRestylingBookingSelezioneTrenoAView%24TextBoxMessage="
 headers = {
     "cookie": "RECENT_SEARCHES=RECENT_SEARCHES_0%3DMC_%7CSMN; _abck=F3CFA9C4AE97D7F3017E897F994C0441~-1~YAAQHBTfrUrAo0qDAQAAwqjZTAg3p8QYmI8X3%2FX2WqYlin5U2lmGSELaCtfs5KcEZYhWNT7ZDW2qUArBNrhlTyOIxjjr%2BqH9%2FgzLPy8KRIpCoCGVy7rVGKuSJgacWiIZoECTS080Se%2FbltsEC0GY5hMTI1aOeqNcLi1jxYtrH%2Fi1O3PulBfg6ndx%2BfN3nKATfi8jaeSkhBL9a%2BonqTSYw6BtSI3xLtvQHkVCPmA9ctf6KE7b56LUBiEUZ07AihSnRj6GsO9EBo%2BSxBpJeBMSG8amPrmOzXeKMtDmptDOoeil%2BNPnNh1whnjC%2FwF0AoX3akKr%2FnMHu%2FUkKzFBlUTDfXrWMspV4%2FOGjQwPnaZP053LIKk%2FY1w8aMAo3mFNIBQ%3D~-1~-1~-1",
     "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:104.0) Gecko/20100101 Firefox/104.0",
@@ -106,9 +120,15 @@ response = requests.request("POST", url, data=payload, headers=headers)
 with open('temp.html', 'w') as f:
     f.write(response.text)
 
-data = getDataFromHtml(response.text, ticketDateObject.strftime('%d/%m'))
+data = getDataFromHtml(response.text, adults+seniors+youngs)
 
-print(json.dumps(data))
+def compareDepartureTime(train):
+    departureTime = int(train['departureTime'].replace(':', ''))
+    return departureTime >= int(ticketTime+'00')
+
+afterDesiredTime = list(filter(compareDepartureTime,data))
+
+print(json.dumps(afterDesiredTime))
 
 
 #with open('italoResponse.html', 'w') as f:

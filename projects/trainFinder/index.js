@@ -19,7 +19,8 @@ async function pyrun(script, options){
 				console.log('error while running '+script);
 				reject(pyErr);
 			}
-			else resolve(pyResults[0])
+			else resolve(pyResults?.length > 0 ? pyResults[0] : [])
+
 		})
 	})
 }
@@ -49,63 +50,29 @@ function getSecondsSinceEpoch(){
 
 app.post('/run', async (req,res) => {
 
-	const {origin, destination, dateTime} = req.body;
+	const {origin, destination, dateTime, passengers} = req.body;
 	let [date, time] = dateTime.split(' ');
 	date = date.replaceAll('/','-');
 
 	let trenitaliaOptions = {
 		mode: 'json',
-		args: [origin, destination, date, time]
+		args: [origin, destination, date, time, passengers]
 	}
-	let passengers = '100'
 	let italoOptions = {
 		mode: 'json',
-		args: [origin, destination, date, passengers]
+		args: [origin, destination, date, time, passengers]
 	}
 
 	let trenitaliaMapId = origin+destination+dateTime;
-	let italoMapId = origin+destination+date;
+	let italoMapId = origin+destination+dateTime
 	
 	let trenitaliaResult = getTrainResults('main.py',trenitaliaOptions, trenitaliaResultsMap, trenitaliaMapId);
 	let italoResult = getTrainResults('italoRequest.py',italoOptions, italoResultsMap, italoMapId);
 
 	Promise.all([trenitaliaResult, italoResult]).then(results => {
-		console.log(results)
-		let combinedResults = results.reduce((a,b)=> ({error: a.error+b.error, results: [...a.results, ...b.results]}))
+		let combinedResults = results.reduce((a,b)=> ({error: a.error + b.error, results: [...a.results, ...b.results]}))
 		res.json(JSON.stringify(combinedResults));
 	})
-	/*
-	let curDate = new Date();
-	let errorText = ''
-	let allResults = []
-	if (trenitaliaResultsMap.has(trenitaliaMapId) && (Math.floor(curDate.getTime()/1000) - trenitaliaResultsMap.get(trenitaliaMapId).requestTime < 600)){
-		allResults = [...allResults, ...trenitaliaResultsMap.get(trenitaliaMapId).data]
-		console.log('Found data in trenitalia cache!');
-	} else {
-		try {
-			let trenitaliaResults = await pyrun('main.py', trenitaliaOptions);
-			if (trenitaliaResults.length === 0) errorText += 'Found no trains on trenitalia for desired time\n';
-			allResults = [...allResults, ...trenitaliaResults]
-			trenitaliaResultsMap.set(trenitaliaMapId, {requestTime: Math.floor(curDate.getTime()/1000), data: trenitaliaResults});
-		} catch (e) {
-			errorText += e.message
-		}
-	}
-	if (italoResultsMap.has(italoMapId) && (Math.floor(curDate.getTime()/1000) - italoResultsMap.get(italoMapId).requestTime < 600)){
-		allResults = [...allResults, ...italoResultsMap.get(italoMapId).data]
-		console.log('Found data in italo cache!');
-	} else {
-		try {
-			let italoResults = await pyrun('italoRequest.py', italoOptions);
-			if (italoResults.length === 0) errorText += 'Found no trains on italo for desired time\n';
-			allResults = [...allResults, ...italoResults]
-			italoResultsMap.set(italoMapId, {requestTime: Math.floor(curDate.getTime()/1000), data: italoResults});
-		} catch (e) {
-			errorText += e.message
-		}
-	}
-	res.json(JSON.stringify({error: errorText, results: allResults}));
-	*/
 })
 
 
