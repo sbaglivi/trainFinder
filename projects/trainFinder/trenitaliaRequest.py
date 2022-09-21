@@ -1,41 +1,18 @@
 from time import time
 import requests
 
+def findTrains(origin, destination, departureDate, departureTime, passengerNumber): 
+    url = "https://www.lefrecce.it/Channels.Website.BFF.WEB/website/ticket/solutions"
 
-url = "https://www.lefrecce.it/Channels.Website.BFF.WEB/website/ticket/solutions"
-
-stazioni = {
-    "torinoPortaSusa" : 830000222,
-    "torinoPortaNuova" : 830000219,
-    "milanoGaribaldi" : 830001645,
-    "milanoCentrale" :  830001700,
-    "milanoRogoredo" : 830001820,
-    "reggioEmilia" : 830005254,
-    "bologna" : 830005043,
-    "firenze" : 830006421,
-    "romaTermini" : 830008409,
-    "romaTiburtina" : 830008217,
-    "napoliCentrale" : 830009218,
-    "napoliAfragola" : 830009988,
-    "salerno" :  830009818,
-    "valloDellaLucania" : 830011709
-}
-
-dataPartenza = "2022-09-23"
-oraPartenza = "16:00"
-
-
-def findTrains(origin, destination, departureDate, departureTime): 
     # time is hh:mm, date is yyyy-mm-dd. I have hardcoded timezone, I have no clue when it will change
-
-    departureTimestamp = f"{departureDate}T{departureTime}:00.000+02:00"
+    departureTimeString = f"{departureDate}T{departureTime}:00.000+02:00"
     currentTimestamp = int(time())
 
     payload = {
         "departureLocationId": origin,
         "arrivalLocationId": destination,
-        "departureTime": departureTimestamp,
-        "adults": 1,
+        "departureTime": departureTimeString,
+        "adults": passengerNumber,
         "children": 0,
         "criteria": {
             "frecceOnly": True,
@@ -70,6 +47,3 @@ def findTrains(origin, destination, departureDate, departureTime):
 
     response = requests.request("POST", url, json=payload, headers=headers)
     return response
-
-#response = findTrains(stazioni['milanoCentrale'], stazioni['firenze'], dataPartenza, oraPartenza)
-#print(response.text)

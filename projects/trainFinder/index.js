@@ -48,9 +48,67 @@ function getSecondsSinceEpoch(){
 	return Math.floor(curDate.getTime()/1000)
 }
 
+app.post('/aera', async (req,res) => {
+	const {origin, destination, dateTime, returnDateTime, passengers} = req.body;
+	let [date, time] = dateTime.split(' ');
+	date = date.replaceAll('/','-');
+	let [retDate, retTime] = returnDateTime.split(' ');
+	retDate = retDate.replaceAll('/','-');
+	let options = {
+		mode: 'json',
+		args: [origin, destination, date, time, passengers, retDate, retTime]
+	}
+	let results = await pyrun('tara.py', options)
+	console.log(results)
+	res.json(JSON.stringify(results))
+	// let trenitaliaResult = getTrainResults('main.py',trenitaliaOptions, trenitaliaResultsMap, trenitaliaMapId);
+	// let italoResult = getTrainResults('italoRequest.py',italoOptions, italoResultsMap, italoMapId);
+	// Promise.all([trenitaliaResult, italoResult]).then(results => {
+	// 	let combinedResults = results.reduce((a,b)=> ({error: a.error + b.error, results: [...a.results, ...b.results]}))
+	// 	res.json(JSON.stringify(combinedResults));
+	// })
+})
+app.post('/aerr', async (req,res) => {
+	const {origin, destination, dateTime, returnDateTime, passengers, goingoutId, cartId, cookies, company} = req.body;
+	let [depDate, depTime] = dateTime.split(' ');
+	depDate = depDate.replaceAll('/','-')
+	let [retDate, retTime] = returnDateTime.split(' ');
+	retDate = retDate.replaceAll('/','-')
+	if (company !== 'trenitalia' && company !== 'italo') return;
+	let results, options;
+	if (company === 'trenitalia'){
+		options = {
+			mode: 'json',
+			args: [origin, destination, depDate, depTime, retDate, retTime, passengers, goingoutId, cartId, JSON.stringify(cookies)]
+		}
+		console.log(origin, destination, dateTime, returnDateTime, passengers, goingoutId, cartId, cookies)
+		let scriptResult = await pyrun('temp.py', options)
+		console.log(scriptResult)
+		results = {message: 'everything went well!'}
+		// runscript iwth data and then send it back
+		//results = await pyrun('scriptname', options)
+	} else {
+		let options = {
+			mode: 'json',
+			args: [origin, destination, date, time, passengers]
+		}
+		results = await pyrun('scriptname', options)
+	}
+	// it's italo
+	res.send(JSON.stringify(results));
+
+
+})
+
 app.post('/run', async (req,res) => {
 
-	const {origin, destination, dateTime, passengers} = req.body;
+	// solo andata -> solito
+	// anche ritorno, no offerte -> faccio 2 query consecutive per gruppo
+	// per quelle sopra posso usare solita mappa
+
+	// anche ritorno, con offerte -> una sola query ma mando indietro anche cartid ecc
+
+	const {origin, destination, dateTime, returnDateTime, passengers} = req.body;
 	let [date, time] = dateTime.split(' ');
 	date = date.replaceAll('/','-');
 
