@@ -120,3 +120,18 @@ user makes only going out request:
  - serve it and fuck off
  - if he adds a return value, wouldn't I want to keep the cartId return in case just to be ready for it rather than making 2 of those?
 user makes going 
+
+---
+
+
+Which scripts do I need:
+trenitalia:
+- only outgoing, doesn't return metadata    oneway. 	returns only array
+- outgoing, returns metadata  				outgoing	returns object with array and metadata
+- return, provided metadata					return		returns only array
+
+italo:
+- only outgoing, doesn't return metadata
+- outgoing, returns metadata
+- return, provided metadata
+
