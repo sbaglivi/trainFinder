@@ -7,7 +7,7 @@ def compareDepartureTime(train, searchedTime):
     return departureTime >= int(searchedTime+'00')
 
 def getDataFromHtml(html, passengers, searchedTime): # passenger is just a number
-    pricePattern = re.compile('\d+\.?\d+')
+    pricePattern = re.compile('\d+[\.|,]?\d+')
     allTrains = []
     soup = BeautifulSoup(html, 'html.parser')
     trainDivs = soup.find_all(class_='item-treno')
@@ -28,7 +28,7 @@ def getDataFromHtml(html, passengers, searchedTime): # passenger is just a numbe
                 try:
                     price = col.find("label").text
                     inputVal = col.find("input").get('value')
-                    numPrice = float(pricePattern.search(price).group()) 
+                    numPrice = float(pricePattern.search(price).group().replace(',','.')) 
                     if numPrice <  minPrice or minPrice == -1:
                         minPrice = numPrice
                         minPriceInputValue = inputVal
@@ -38,7 +38,7 @@ def getDataFromHtml(html, passengers, searchedTime): # passenger is just a numbe
 
         trainData['minIndividualPrice'] = minPrice
         trainData['inputValue'] = minPriceInputValue
-        trainData['minPrice'] = minPrice*passengers
+        trainData['minPrice'] = round(minPrice*passengers,2)
         trainData['company'] = 'italo'
         #trainData['prices'] = prices
         allTrains.append(trainData)

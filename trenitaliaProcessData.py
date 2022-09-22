@@ -70,7 +70,8 @@ def processData(jsonData, searchedDate, passengers):
     solutions = solutions.apply(lambda col: findSolutionPrices(col, passengers), axis=1)
     solutions['company'] = 'trenitalia';
 
-    solutions = solutions[solutions['departureDate'] == searchedDate]
+    sameDaySolutions = solutions[solutions['departureDate'] == searchedDate]
 
-    solutionsDictionary = solutions[['id', 'departureDate', 'departureTime', 'arrivalTime', 'duration', 'young', 'senior', 'adult','company', 'minPrice']].to_dict('records')
-    return solutionsDictionary
+    solutionsDictionary = sameDaySolutions[['id', 'departureDate', 'departureTime', 'arrivalTime', 'duration', 'young', 'senior', 'adult','company', 'minPrice']].to_dict('records')
+    foundNextDaySolutions = solutions.shape[0] > sameDaySolutions.shape[0]
+    return [solutionsDictionary, foundNextDaySolutions]

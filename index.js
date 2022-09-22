@@ -54,19 +54,21 @@ app.post('/aera', async (req,res) => {
 	date = date.replaceAll('/','-');
 	let [retDate, retTime] = returnDateTime.split(' ');
 	retDate = retDate.replaceAll('/','-');
-	let options = {
+	let trenitaliaOptions = {
 		mode: 'json',
 		args: [origin, destination, date, time, passengers, retDate, retTime]
 	}
-	let results = await pyrun('tara.py', options)
-	console.log(results)
-	res.json(JSON.stringify(results))
-	// let trenitaliaResult = getTrainResults('main.py',trenitaliaOptions, trenitaliaResultsMap, trenitaliaMapId);
-	// let italoResult = getTrainResults('italoRequest.py',italoOptions, italoResultsMap, italoMapId);
-	// Promise.all([trenitaliaResult, italoResult]).then(results => {
-	// 	let combinedResults = results.reduce((a,b)=> ({error: a.error + b.error, results: [...a.results, ...b.results]}))
-	// 	res.json(JSON.stringify(combinedResults));
-	// })
+	let italoOptions = {
+		mode: 'json',
+		args: [origin, destination, date, time, passengers, retDate, retTime]
+	}
+	let trenitaliaResults = pyrun('tara.py', trenitaliaOptions) // shape : {data: array, cartId: str, cookies: object}
+	let italoResults = pyrun('iar.py', italoOptions) // shape {data: array, cookies: object}
+	Promise.all([trenitaliaResults, italoResults]).then(results => {
+		let combinedResults = {results: [...results[0].data, ...results[1].data], cartId: results[0].cartId, trenitaliaCookies: results[0].cookies, italoCookies: results[1].cookies}
+		// let combinedResults = results.reduce((a,b)=> ({error: a.error + b.error, results: [...a.results, ...b.results]}))
+		res.json(JSON.stringify(combinedResults));
+	})
 })
 app.post('/aerr', async (req,res) => {
 	const {origin, destination, dateTime, returnDateTime, passengers, goingoutId, cartId, cookies, company} = req.body;
@@ -82,17 +84,15 @@ app.post('/aerr', async (req,res) => {
 			args: [origin, destination, depDate, depTime, retDate, retTime, passengers, goingoutId, cartId, JSON.stringify(cookies)]
 		}
 		console.log(origin, destination, dateTime, returnDateTime, passengers, goingoutId, cartId, cookies)
-		let scriptResult = await pyrun('temp.py', options)
-		console.log(scriptResult)
-		results = {message: 'everything went well!'}
-		// runscript iwth data and then send it back
-		//results = await pyrun('scriptname', options)
-	} else {
-		let options = {
+		results = await pyrun('tarr.py', options)
+		// console.log(results)
+	} else if (company === 'italo') {
+		options = {
 			mode: 'json',
-			args: [origin, destination, date, time, passengers]
+			args: [origin, destination, depDate, depTime, retDate, retTime, passengers, goingoutId, JSON.stringify(cookies)]
 		}
-		results = await pyrun('scriptname', options)
+		results = await pyrun('iar2.py', options)
+		console.log(results)
 	}
 	// it's italo
 	res.send(JSON.stringify(results));
