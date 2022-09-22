@@ -1,7 +1,7 @@
 from time import time
 import requests
 
-def findTrains(origin, destination, departureDate, departureTime, passengerNumber): 
+def findOnewayTrains(origin, destination, departureDate, departureTime, passengerNumber, offset): 
     url = "https://www.lefrecce.it/Channels.Website.BFF.WEB/website/ticket/solutions"
 
     # time is hh:mm, date is yyyy-mm-dd. I have hardcoded timezone, I have no clue when it will change
@@ -19,7 +19,7 @@ def findTrains(origin, destination, departureDate, departureTime, passengerNumbe
             "regionalOnly": False,
             "noChanges": True,
             "order": "DEPARTURE_DATE",
-            "offset": 0,
+            "offset": offset,
             "limit": 10
         },
         "advancedSearchRequest": {"bestFare": False}
@@ -46,4 +46,78 @@ def findTrains(origin, destination, departureDate, departureTime, passengerNumbe
     }
 
     response = requests.request("POST", url, json=payload, headers=headers)
+    return response
+
+def findOutgoingTrains(origin, destination, departureTimeString, returnTimeString, passengerNumber, offset, cookies, cartId): 
+    url = "https://www.lefrecce.it/Channels.Website.BFF.WEB/website/ticket/solutions"
+
+    payload = {
+        "departureLocationId": origin,
+        "arrivalLocationId": destination,
+        "departureTime": departureTimeString,
+        "returnDepartureTime": returnTimeString,
+        "adults": passengerNumber,
+        "children": 0,
+        "criteria": {
+            "frecceOnly": True,
+            "regionalOnly": False,
+            "noChanges": True,
+            "order": "DEPARTURE_DATE",
+            "offset": offset,
+            "limit": 10
+        },
+        "advancedSearchRequest": {"bestFare": False}
+    }
+    if (cartId):
+        payload['cartId'] = cartId
+    currentTimestamp = int(time.time())
+    headers = {
+        "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:104.0) Gecko/20100101 Firefox/104.0",
+        "Accept": "application/json, application/pdf, text/calendar",
+        "Accept-Language": "en-GB",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Referer": "https://www.lefrecce.it/Channels.Website.WEB/",
+        "Content-Type": "application/json",
+        "X-Requested-With": "Fetch",
+        #"X-CSRF-Token": "j5IXMP7te5qXgAC0f1/OWxspP5SeGJzO9jOENy50FY25UmyZ0y8f5fueM7Mkseu1rI8ujkXJWxMBb3z2PzEv/Q==",
+        #"Channel": "41",
+        "CallerTimestamp": str(currentTimestamp),
+        "Origin": "https://www.lefrecce.it",
+        "Connection": "keep-alive",
+        "Sec-Fetch-Dest": "empty",
+        "Sec-Fetch-Mode": "cors",
+        "Sec-Fetch-Site": "same-origin",
+        "TE": "trailers"
+    }
+    if cookies:
+        response = requests.request("POST", url, json=payload, headers=headers, cookies=cookies)
+    else:
+        response = requests.request("POST", url, json=payload, headers=headers)
+    return response
+
+def findReturnTrains(origin, destination, departureTimeString, returnTimeString, passengerNumber, goingoutId, offset, cookies, cartId): 
+    url = "https://www.lefrecce.it/Channels.Website.BFF.WEB/website/ticket/solutions"
+
+    payload = {
+        "cartId": cartId,
+        "departureLocationId": origin,
+        "arrivalLocationId": destination,
+        "departureTime": departureTimeString,
+        "returnDepartureTime": returnTimeString,
+        "forwardSolutionId": goingoutId,
+        "adults": passengerNumber,
+        "children": 0,
+        "criteria": {
+            "frecceOnly": True,
+            "regionalOnly": False,
+            "noChanges": True,
+            "order": "DEPARTURE_DATE",
+            "offset": offset,
+            "limit": 10
+        },
+        "advancedSearchRequest": {"bestFare": False}
+    }
+
+    response = requests.request("POST", url=url, json=payload, cookies=cookies)
+
     return response

@@ -92,3 +92,5 @@ def validateMoreOptions(args):
     return True
 def trenitaliaValidateRoundtrip(args):
     return validateOptions(args[:5], trenitaliaStations) and validateMoreOptions(args[5:])
+def italoValidateRoundtrip(args):
+    return validateOptions(args[:5], italoStations) and validateMoreOptions(args[5:])

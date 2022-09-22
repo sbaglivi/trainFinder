@@ -100,15 +100,8 @@ app.post('/aerr', async (req,res) => {
 
 })
 
-app.post('/run', async (req,res) => {
-
-	// solo andata -> solito
-	// anche ritorno, no offerte -> faccio 2 query consecutive per gruppo
-	// per quelle sopra posso usare solita mappa
-
-	// anche ritorno, con offerte -> una sola query ma mando indietro anche cartid ecc
-
-	const {origin, destination, dateTime, returnDateTime, passengers} = req.body;
+app.post('/outgoingOnly', async (req,res) => { // 2 simple requests, return only results
+	const {origin, destination, dateTime, passengers} = req.body;
 	let [date, time] = dateTime.split(' ');
 	date = date.replaceAll('/','-');
 
@@ -124,102 +117,85 @@ app.post('/run', async (req,res) => {
 	let trenitaliaMapId = origin+destination+dateTime;
 	let italoMapId = origin+destination+dateTime
 	
-	let trenitaliaResult = getTrainResults('main.py',trenitaliaOptions, trenitaliaResultsMap, trenitaliaMapId);
-	let italoResult = getTrainResults('italoRequest.py',italoOptions, italoResultsMap, italoMapId);
+	// 								CHECK SCRIPTS TO RUN
+	// let trenitaliaResult = getTrainResults('main.py',trenitaliaOptions, trenitaliaResultsMap, trenitaliaMapId);
+	// let italoResult = getTrainResults('italoRequest.py',italoOptions, italoResultsMap, italoMapId);
 
+	Promise.all([trenitaliaResult, italoResult]).then(results => {
+		res.json(JSON.stringify([...trenitaliaResult, ...italoResult]))
+	})
+	/*
 	Promise.all([trenitaliaResult, italoResult]).then(results => {
 		let combinedResults = results.reduce((a,b)=> ({error: a.error + b.error, results: [...a.results, ...b.results]}))
 		res.json(JSON.stringify(combinedResults));
 	})
+	*/
 })
 
+app.post('/allNoOffers', (req,res) => { // need to run 2 outgoing requests that return metadata (1 italo 1 tren), then another 2 simple reqs (just results)
+	const {origin, destination, dateTime, returnDateTime, passengers} = req.body;
+	let [date, time] = dateTime.split(' ');
+	date = date.replaceAll('/','-');
+	let [returnDate, returnTime] = returnDateTime.split(' ');
+	returnDate = returnDate.replaceAll('/','-');
 
-app.post('/dev', (req,res) => {
-	let data = [
-		{
-			"solution.departureTime": "2022-09-22T15:10:00.000+02:00",
-			"solution.arrivalTime": "2022-09-22T20:10:00.000+02:00",
-			"solution.duration": "5h 00min",
-			"young": 72.1,
-			"senior": 72.1,
-			"adult": 77.9
-		},
-		{
-			"solution.departureTime": "2022-09-22T15:25:00.000+02:00",
-			"solution.arrivalTime": "2022-09-22T20:03:00.000+02:00",
-			"solution.duration": "4h 38min",
-			"young": 61.8,
-			"senior": 61.8,
-			"adult": 71.9
-		},
-		{
-			"solution.departureTime": "2022-09-22T16:10:00.000+02:00",
-			"solution.arrivalTime": "2022-09-22T21:13:00.000+02:00",
-			"solution.duration": "5h 03min",
-			"young": 72.1,
-			"senior": 72.1,
-			"adult": 71.9
-		},
-		{
-			"solution.departureTime": "2022-09-22T17:10:00.000+02:00",
-			"solution.arrivalTime": "2022-09-22T22:12:00.000+02:00",
-			"solution.duration": "5h 02min",
-			"young": 72.1,
-			"senior": 72.1,
-			"adult": 71.9
-		},
-		{
-			"solution.departureTime": "2022-09-22T17:58:00.000+02:00",
-			"solution.arrivalTime": "2022-09-22T22:33:00.000+02:00",
-			"solution.duration": "4h 35min",
-			"young": 61.8,
-			"senior": 61.8,
-			"adult": 71.9
-		},
-		{
-			"solution.departureTime": "2022-09-22T18:10:00.000+02:00",
-			"solution.arrivalTime": "2022-09-22T23:12:00.000+02:00",
-			"solution.duration": "5h 02min",
-			"young": 61.8,
-			"senior": 61.8,
-			"adult": 71.9
-		},
-		{
-			"solution.departureTime": "2022-09-22T18:30:00.000+02:00",
-			"solution.arrivalTime": "2022-09-22T23:03:00.000+02:00",
-			"solution.duration": "4h 33min",
-			"young": 61.8,
-			"senior": 61.8,
-			"adult": 71.9
-		},
-		{
-			"solution.departureTime": "2022-09-22T19:00:00.000+02:00",
-			"solution.arrivalTime": "2022-09-22T23:28:00.000+02:00",
-			"solution.duration": "4h 28min",
-			"young": 82.4,
-			"senior": 82.4,
-			"adult": 77.9
-		},
-		{
-			"solution.departureTime": "2022-09-23T05:10:00.000+02:00",
-			"solution.arrivalTime": "2022-09-23T10:28:00.000+02:00",
-			"solution.duration": "5h 18min",
-			"young": 61.8,
-			"senior": 61.8,
-			"adult": 65.9
-		},
-		{
-			"solution.departureTime": "2022-09-23T06:00:00.000+02:00",
-			"solution.arrivalTime": "2022-09-23T10:33:00.000+02:00",
-			"solution.duration": "4h 33min",
-			"young": 61.8,
-			"senior": 61.8,
-			"adult": 65.9
+	let trenitaliaOptions = {
+		mode: 'json',
+		args: [origin, destination, date, time, passengers]
+	}
+	let italoOptions = {
+		mode: 'json',
+		args: [origin, destination, date, time, passengers]
+	}
+
+	// RUN SCRIPTS
+
+	Promise.all([trenitaliaResult, italoResult, trenitaliaNoMetadata, italoNoMetadata]).then(results => {
+		let resultValue = {
+			results: {outgoing: [...trenitaliaResult.results, ...italoResult.results], returning: [...trenitaliaNoMetadata, ...italoNoMetadata]}, 
+			metadata: {italoCookies: italoResult.cookies, trenitaliaCookies: trenitaliaResult.cookies, cartId: trenitaliaResult.cartid}
 		}
-	]
-	res.json(JSON.stringify(data));
+		res.json(JSON.stringify(resultValue))	
+	})
 
 })
+
+app.post('/bothReturns', (req,res) => { // needs to run 2 return requests, gets provided metadata
+	const {origin, destination, dateTime, returnDateTime, passengers, cartId, trenitaliaCookies, italoCookies, trenitaliaId, italoInputValue} = req.body;
+	let [date, time] = dateTime.split(' ');
+	date = date.replaceAll('/','-');
+	let [returnDate, returnTime] = returnDateTime.split(' ');
+	returnDate = returnDate.replaceAll('/','-');
+	
+	// SET OPTIONS
+
+	// RUN SCRIPTS
+
+	Promise.all([trenitaliaResult, italoResult]).then(results => {
+		res.json(JSON.stringify([...trenitaliaResult, italoResult]))
+	})
+})
+
+app.post('/outgoing', (req,res) => { // 2 requests that return metadata
+	const {origin, destination, dateTime, returnDateTime, passengers, cartId, trenitaliaCookies, italoCookies, trenitaliaId, italoInputValue} = req.body;
+	let [date, time] = dateTime.split(' ');
+	date = date.replaceAll('/','-');
+	let [returnDate, returnTime] = returnDateTime.split(' ');
+	returnDate = returnDate.replaceAll('/','-');
+	
+	// SET OPTIONS
+
+	// RUN SCRIPTS
+
+	Promise.all([trenitaliaResult, italoResult]).then(results => {
+		let resultValue = {
+			results: {outgoing: [...trenitaliaResult.results, ...italoResult.results]}, 
+			metadata: {italoCookies: italoResult.cookies, trenitaliaCookies: trenitaliaResult.cookies, cartId: trenitaliaResult.cartid}
+		}
+		res.json(JSON.stringify(resultValue))
+	})
+})
+
 
 app.listen(3003, () => {
 	console.log('Listening on port 3003')
