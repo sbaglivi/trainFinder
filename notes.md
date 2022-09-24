@@ -135,3 +135,21 @@ italo:
 - outgoing, returns metadata
 - return, provided metadata
 
+
+------
+Maybe  (MAYBE) I finally solved the mistery of why the return results from trenitalia were not working.
+if I don't provide cookies to subsequent requests I keep getting assigned a new sessionid and a new cartid.
+I'm just saving the last of them. But maybe the ids of the first trains are hashed based on the first 
+cart / session id received or something like it?
+Maybe if I provide cookies/ session it won't give me a new oen
+
+It appears that if you do provide cookies you only get a session on id on the first response.
+if you don't provide them you get a new one on each response.
+Since in my tests I did have a sessionid it means I was getting one (and I was not setting cookies therefore)
+BUT it still wasn't working, which leads me to think that again the ids of the train chosen and the session id are
+connected and if you don't use the same one the server detects an error
+
+Next dilemma on this:
+A request while providing cookies doesn't return the sessionid, so I should use the first one received.
+It does return a new cookie, with a diff key and a diff value. So do I need to use both on my request? Or one of them?
+The correct one?

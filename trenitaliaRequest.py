@@ -70,7 +70,7 @@ def findOutgoingTrains(origin, destination, departureTimeString, returnTimeStrin
     }
     if (cartId):
         payload['cartId'] = cartId
-    currentTimestamp = int(time.time())
+    currentTimestamp = int(time())
     headers = {
         "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:104.0) Gecko/20100101 Firefox/104.0",
         "Accept": "application/json, application/pdf, text/calendar",
@@ -79,8 +79,8 @@ def findOutgoingTrains(origin, destination, departureTimeString, returnTimeStrin
         "Referer": "https://www.lefrecce.it/Channels.Website.WEB/",
         "Content-Type": "application/json",
         "X-Requested-With": "Fetch",
-        #"X-CSRF-Token": "j5IXMP7te5qXgAC0f1/OWxspP5SeGJzO9jOENy50FY25UmyZ0y8f5fueM7Mkseu1rI8ujkXJWxMBb3z2PzEv/Q==",
-        #"Channel": "41",
+        "X-CSRF-Token": "j5IXMP7te5qXgAC0f1/OWxspP5SeGJzO9jOENy50FY25UmyZ0y8f5fueM7Mkseu1rI8ujkXJWxMBb3z2PzEv/Q==",
+        "Channel": "41",
         "CallerTimestamp": str(currentTimestamp),
         "Origin": "https://www.lefrecce.it",
         "Connection": "keep-alive",
@@ -118,6 +118,6 @@ def findReturnTrains(origin, destination, departureTimeString, returnTimeString,
         "advancedSearchRequest": {"bestFare": False}
     }
 
-    response = requests.request("POST", url=url, json=payload, cookies=cookies)
+    response = requests.request("POST", url, json=payload, cookies=cookies)
 
     return response

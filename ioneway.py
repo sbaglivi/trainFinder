@@ -1,6 +1,6 @@
 from validateOptions import italoValidateOptions as validateOptions, italoStations as stations
 from italoProcessData import getDataFromHtml
-from italoRequest import findTrains, getPromoCode
+from italoRequest import findOnewayTrains, getPromoCode
 
 import sys, json
 from datetime import datetime
@@ -17,7 +17,7 @@ promoCode = getPromoCode(depDateObject)
 depDay = depDate[:2]
 depYearMonth = depDateObject.strftime('%Y-%m')
 
-response = findTrains(originId, destinationId, depDay, depYearMonth, [adults, seniors, youngs], promoCode)
+response = findOnewayTrains(originId, destinationId, depDay, depYearMonth, [adults, seniors, youngs], promoCode)
 
 trainsData = getDataFromHtml(response.text, adults+seniors+youngs, depTime)
 

@@ -15,11 +15,15 @@ app.get('/', (req,res) => {
 async function pyrun(script, options){
 	return new Promise((resolve, reject) => {
 		PythonShell.run(script, options, (pyErr, pyResults)=>{
-			if (pyErr){
-				console.log('error while running '+script);
-				reject(pyErr);
+			try {
+				if (pyErr){
+					console.log('error while running '+script);
+					reject(pyErr);
+				}
+				else resolve(pyResults?.length > 0 ? pyResults[0] : [])
+			} catch (e) {
+				console.log(e.message)
 			}
-			else resolve(pyResults?.length > 0 ? pyResults[0] : [])
 
 		})
 	})
@@ -29,15 +33,19 @@ async function getTrainResults(script, options, map, mapId){
 	let secondsSinceEpoch = getSecondsSinceEpoch()
 	if (map.has(mapId) && (secondsSinceEpoch - map.get(mapId).requestTime < 600)){
 		console.log('Found data in cache for '+script);
-		return {error: null, results: map.get(mapId).data}
+		// return {error: null, results: map.get(mapId).data}
+		return map.get(mapId).data
 	} else {
 		try {
 			let results = await pyrun(script, options);
 			if (results.length === 0) throw Error('Found no trains on '+script+' for desired time\n');
 			map.set(mapId, {requestTime: secondsSinceEpoch, data: results});
-			return {error: null, results}
+			// return {error: null, results}
+			return results
 		} catch (e) {
-			return {error: e.message, results: []}
+			console.log(e.message)
+			// return {error: e.message, results: []}
+			return []
 		}
 	}
 
@@ -67,7 +75,7 @@ app.post('/aera', async (req,res) => {
 	Promise.all([trenitaliaResults, italoResults]).then(results => {
 		let combinedResults = {results: [...results[0].data, ...results[1].data], cartId: results[0].cartId, trenitaliaCookies: results[0].cookies, italoCookies: results[1].cookies}
 		// let combinedResults = results.reduce((a,b)=> ({error: a.error + b.error, results: [...a.results, ...b.results]}))
-		res.json(JSON.stringify(combinedResults));
+		res.json(combinedResults);
 	})
 })
 app.post('/aerr', async (req,res) => {
@@ -83,7 +91,7 @@ app.post('/aerr', async (req,res) => {
 			mode: 'json',
 			args: [origin, destination, depDate, depTime, retDate, retTime, passengers, goingoutId, cartId, JSON.stringify(cookies)]
 		}
-		console.log(origin, destination, dateTime, returnDateTime, passengers, goingoutId, cartId, cookies)
+		console.log(origin, destination, dateTime, returnDateTime, passengers, goingoutId, cartId, JSON.stringify(cookies))
 		results = await pyrun('tarr.py', options)
 		// console.log(results)
 	} else if (company === 'italo') {
@@ -105,11 +113,7 @@ app.post('/outgoingOnly', async (req,res) => { // 2 simple requests, return only
 	let [date, time] = dateTime.split(' ');
 	date = date.replaceAll('/','-');
 
-	let trenitaliaOptions = {
-		mode: 'json',
-		args: [origin, destination, date, time, passengers]
-	}
-	let italoOptions = {
+	let options = {
 		mode: 'json',
 		args: [origin, destination, date, time, passengers]
 	}
@@ -118,11 +122,11 @@ app.post('/outgoingOnly', async (req,res) => { // 2 simple requests, return only
 	let italoMapId = origin+destination+dateTime
 	
 	// 								CHECK SCRIPTS TO RUN
-	// let trenitaliaResult = getTrainResults('main.py',trenitaliaOptions, trenitaliaResultsMap, trenitaliaMapId);
-	// let italoResult = getTrainResults('italoRequest.py',italoOptions, italoResultsMap, italoMapId);
+	let trenitaliaResult = getTrainResults('toneway.py', options, trenitaliaResultsMap, trenitaliaMapId);
+	let italoResult = getTrainResults('ioneway.py', options, italoResultsMap, italoMapId);
 
 	Promise.all([trenitaliaResult, italoResult]).then(results => {
-		res.json(JSON.stringify([...trenitaliaResult, ...italoResult]))
+		res.json([...results[0], ...results[1]])
 	})
 	/*
 	Promise.all([trenitaliaResult, italoResult]).then(results => {
@@ -139,23 +143,27 @@ app.post('/allNoOffers', (req,res) => { // need to run 2 outgoing requests that 
 	let [returnDate, returnTime] = returnDateTime.split(' ');
 	returnDate = returnDate.replaceAll('/','-');
 
-	let trenitaliaOptions = {
+	let outgoingOptions = {
 		mode: 'json',
-		args: [origin, destination, date, time, passengers]
+		args: [origin, destination, date, time, returnDate, returnTime, passengers]
 	}
-	let italoOptions = {
+	let returnOptions = {
 		mode: 'json',
-		args: [origin, destination, date, time, passengers]
+		args: [destination, origin, returnDate, returnTime, passengers]
 	}
 
 	// RUN SCRIPTS
+	let trenitaliaOutgoing = pyrun('toutgoing.py', outgoingOptions)
+	let italoOutgoing = pyrun('ioutgoing.py', outgoingOptions)
+	let trenitaliaReturn = pyrun('toneway.py', returnOptions)
+	let italoReturn = pyrun('ioneway.py', returnOptions)
 
-	Promise.all([trenitaliaResult, italoResult, trenitaliaNoMetadata, italoNoMetadata]).then(results => {
+	Promise.all([trenitaliaOutgoing, italoOutgoing, trenitaliaReturn, italoReturn]).then(results => {
 		let resultValue = {
-			results: {outgoing: [...trenitaliaResult.results, ...italoResult.results], returning: [...trenitaliaNoMetadata, ...italoNoMetadata]}, 
-			metadata: {italoCookies: italoResult.cookies, trenitaliaCookies: trenitaliaResult.cookies, cartId: trenitaliaResult.cartid}
+			results: {outgoing: [...results[0].results, ...results[1].results], returning: [...results[2], ...results[3]]}, 
+			metadata: {italoCookies: results[1].cookies, trenitaliaCookies: results[0].cookies, cartId: results[0].cartid}
 		}
-		res.json(JSON.stringify(resultValue))	
+		res.json(resultValue)	
 	})
 
 })
@@ -168,34 +176,77 @@ app.post('/bothReturns', (req,res) => { // needs to run 2 return requests, gets 
 	returnDate = returnDate.replaceAll('/','-');
 	
 	// SET OPTIONS
-
+	let trenitaliaOptions = {
+		mode: 'json',
+		args: [origin, destination, date, time, passengers, returnDate, returnTime, trenitaliaId, cartId, JSON.stringify(trenitaliaCookies)]
+	}
+	let italoOptions = {
+		mode: 'json',
+		args: [origin, destination, date, time, passengers, returnDate, returnTime, italoInputValue, JSON.stringify(italoCookies)]
+	}
 	// RUN SCRIPTS
+	let trenitaliaResult = pyrun('treturn.py', trenitaliaOptions)
+	let italoResult = pyrun('ireturn.py', italoOptions)
 
 	Promise.all([trenitaliaResult, italoResult]).then(results => {
-		res.json(JSON.stringify([...trenitaliaResult, italoResult]))
+		res.json([...results[0], ...results[1]])
 	})
 })
 
 app.post('/outgoing', (req,res) => { // 2 requests that return metadata
-	const {origin, destination, dateTime, returnDateTime, passengers, cartId, trenitaliaCookies, italoCookies, trenitaliaId, italoInputValue} = req.body;
+	const {origin, destination, dateTime, returnDateTime, passengers} = req.body;
 	let [date, time] = dateTime.split(' ');
 	date = date.replaceAll('/','-');
 	let [returnDate, returnTime] = returnDateTime.split(' ');
 	returnDate = returnDate.replaceAll('/','-');
 	
 	// SET OPTIONS
+	let options = {
+		mode: 'json',
+		args: [origin, destination, date, time, passengers, returnDate, returnTime]
+	}
 
 	// RUN SCRIPTS
+	let trenitaliaResult = pyrun('toutgoing.py', options)
+	let italoResult = pyrun('ioutgoing.py', options)
 
 	Promise.all([trenitaliaResult, italoResult]).then(results => {
 		let resultValue = {
-			results: {outgoing: [...trenitaliaResult.results, ...italoResult.results]}, 
-			metadata: {italoCookies: italoResult.cookies, trenitaliaCookies: trenitaliaResult.cookies, cartId: trenitaliaResult.cartid}
+			results: [...results[0].results, ...results[1].results],
+			metadata: {italoCookies: results[1].cookies, trenitaliaCookies: results[0].cookies, cartId: results[0].cartId}
 		}
-		res.json(JSON.stringify(resultValue))
+		res.json(resultValue)
 	})
 })
 
+app.post('/return', async (req,res) => {
+	const {company} = req.body;
+	const {origin, destination, dateTime, returnDateTime, passengers, cookies} = req.body;
+	let [date, time] = dateTime.split(' ');
+	date = date.replaceAll('/','-');
+	let [returnDate, returnTime] = returnDateTime.split(' ');
+	returnDate = returnDate.replaceAll('/','-');
+	let results;
+
+	if (company === 'italo'){
+		const {inputValue} = req.body;
+		let italoOptions = {
+			mode: 'json',
+			args: [origin, destination, date, time, passengers, returnDate, returnTime, inputValue, JSON.stringify(cookies)]
+		}
+		results = await pyrun('ireturn.py', italoOptions)
+	} else if (company === 'trenitalia') {
+		const {cartId, goingoutId} = req.body;
+		let trenitaliaOptions = {
+			mode: 'json',
+			args: [origin, destination, date, time, passengers, returnDate, returnTime, goingoutId, cartId, JSON.stringify(cookies)]
+		}
+		console.log(trenitaliaOptions.args)
+		results = await pyrun('treturn.py', trenitaliaOptions)
+	}
+
+	res.json(results)
+})
 
 app.listen(3003, () => {
 	console.log('Listening on port 3003')

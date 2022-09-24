@@ -22,7 +22,7 @@ retYearMonth = retDateObject.strftime('%Y-%m')
 promoCode = getPromoCode(depDateObject)
 cookies = json.loads(cookies)
 
-response = findReturnTrains(originId, destinationId, depDay, depYearMonth, retDay, retYearMonth, adults, seniors, youngs, promoCode, cookies)
+response = findReturnTrains(originId, destinationId, depDay, depYearMonth, retDay, retYearMonth, adults, seniors, youngs, promoCode, cookies, inputValue)
 data = getDataFromHtml(response.text, totalPassengers, retTime)
 
 print(json.dumps(data))

@@ -1,9 +1,8 @@
-import requests, time, re
+import requests, time, re, sys
 from datetime import datetime
 import pandas as pd
+from validateOptions import trenitaliaStations as stations
 session = requests.Session()
-
-trainDateObject = datetime.strptime('22/09','%d/%m')
 
 # --- ---------------------
 durationPattern = re.compile('(\d+)(?:h )(\d+)(?:min)')
@@ -21,7 +20,7 @@ def processData(jsonData):
     solutions['duration'] = solutions['duration'].apply(formatDuration)
     solutionsWithPrices = solutions.apply(findPrices, axis=1)
     solutionsWithPrices['company'] = 'trenitalia';
-    sameDaySolutions = solutionsWithPrices[solutionsWithPrices['departureDate'] == trainDateObject.strftime("%d/%m")]
+    sameDaySolutions = solutionsWithPrices[solutionsWithPrices['departureDate'] == depDateObject.strftime("%d/%m")]
     # return solutionsWithPrices[['id', 'departureDate', 'departureTime', 'arrivalTime', 'duration', 'young', 'senior', 'adult']]
     return sameDaySolutions[['id', 'departureTime', 'arrivalTime', 'duration', 'young', 'senior', 'adult','company', 'minPrice']]
 def minValid(*values):
@@ -80,13 +79,28 @@ def findPrices(row):
     return row
 # --------------------------------------------------
 
+
+depTime = '09'
+retTime = '17'
+depDateObject = datetime.strptime('25/09/22','%d/%m/%y')
+retDateObject = datetime.strptime('25/09/22','%d/%m/%y')
+depTimeString = f"{depDateObject.strftime('%Y-%m-%d')}T{depTime}:00:00.000+02:00"
+retTimeString = f"{retDateObject.strftime('%Y-%m-%d')}T{retTime}:00:00.000+02:00"
+trainDateObject = depDateObject
+
+args = sys.argv[1:]
+[origin, destination] = args
+totalPassengers = 2
+originId = stations[origin]
+destinationId = stations[destination]
+
 url = "https://www.lefrecce.it/Channels.Website.BFF.WEB/website/ticket/solutions"
 
 payload = {
-    "departureLocationId": 830001700,
-    "arrivalLocationId": 830009818,
-    "departureTime": "2022-09-22T14:00:00.000+02:00",
-    "returnDepartureTime": "2022-09-25T14:00:00.000+02:00",
+    "departureLocationId": originId,
+    "arrivalLocationId": destinationId,
+    "departureTime": depTimeString,
+    "returnDepartureTime": retTimeString,
     "adults": 1,
     "children": 0,
     "criteria": {
@@ -120,52 +134,71 @@ headers = {
     "TE": "trailers"
 }
 
-response = session.post(url, json=payload, headers=headers)
+with open ('trenarlog.txt', 'w') as log:
+    # response = session.post(url, json=payload, headers=headers)
+    response = requests.request("POST", url, json=payload, headers=headers)
+    log.write(str(response.request.headers))
+    log.write('\n\n')
+    log.write(str(response.request._cookies))
+    log.write('\n\n')
+    log.write(str(response.headers))
+    log.write('\n\n')
+    log.write(str(response.cookies))
+    log.write('\n\n')
 
-with open('trenA.txt', 'w') as f:
-    f.write(response.text)
+    with open('trenA.txt', 'w') as f:
+        f.write(response.text)
 
-data = response.json()
-processedData = processData(data)
-optionsList = processedData.to_dict('records')
-for i in range(len(optionsList)):
-    print(f"{i} - {optionsList[i]}")
-choice = int(input('Type the index of desired choice\n'))
+    data = response.json()
+    processedData = processData(data)
+    optionsList = processedData.to_dict('records')
+    for i in range(len(optionsList)):
+        print(f"{i} - {optionsList[i]}")
+    choice = int(input('Type the index of desired choice\n'))
 
 
-print(f'You selected option: {optionsList[choice]}')
+    print(f'You selected option: {optionsList[choice]}')
 
-time.sleep(5)
-print('Just woke up!')
+    time.sleep(30)
+    print('Just woke up!')
 
-payload = {
-    "cartId": data['cartId'],
-    "departureLocationId": 830009818,
-    "arrivalLocationId": 830001700,
-    "departureTime": "2022-09-22T14:00:00.000+02:00",
-    "returnDepartureTime": "2022-09-25T14:00:00.000+02:00",
-    #"forwardSolutionId": "x8dabd0e2-45f5-40bf-9b01-13fb6da2526f",
-    "forwardSolutionId": optionsList[choice]['id'],
-    "adults": 1,
-    "children": 0,
-    "criteria": {
-        "frecceOnly": True,
-        "regionalOnly": False,
-        "noChanges": True,
-        "order": "DEPARTURE_DATE",
-        "offset": 0,
-        "limit": 10
-    },
-    "advancedSearchRequest": {"bestFare": False}
-}
+    payload = {
+        "cartId": data['cartId'],
+        "departureLocationId": destinationId,
+        "arrivalLocationId": originId,
+        "departureTime": depTimeString,
+        "returnDepartureTime": retTimeString,
+        #"forwardSolutionId": "x8dabd0e2-45f5-40bf-9b01-13fb6da2526f",
+        "forwardSolutionId": optionsList[choice]['id'],
+        "adults": 1,
+        "children": 0,
+        "criteria": {
+            "frecceOnly": True,
+            "regionalOnly": False,
+            "noChanges": True,
+            "order": "DEPARTURE_DATE",
+            "offset": 0,
+            "limit": 10
+        },
+        "advancedSearchRequest": {"bestFare": False}
+    }
 
-response = session.post(url, json=payload, cookies=response.cookies)
-trainDateObject = datetime.strptime('25/09','%d/%m')
+    # response = session.post(url, json=payload, cookies=response.cookies)
+    response = requests.request("POST", url, json=payload, cookies=response.cookies)
+    log.write(str(response.request.headers))
+    log.write('\n\n')
+    log.write(str(response.request._cookies))
+    log.write('\n\n')
+    log.write(str(response.headers))
+    log.write('\n\n')
+    log.write(str(response.cookies))
+    log.write('\n\n')
 
-data = response.json()
-processedData = processData(data)
-for line in processedData.to_dict('records'):
-    print(line)
+    trainDateObject = retDateObject
+    data = response.json()
+    processedData = processData(data)
+    for line in processedData.to_dict('records'):
+        print(line)
 
-with open('trenR.txt', 'w') as f:
-    f.write(response.text)
+    with open('trenR.txt', 'w') as f:
+        f.write(response.text)

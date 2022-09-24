@@ -1,4 +1,4 @@
-from validateOptions import trenitaliaValidateOptions as validateOptions, stations
+from validateOptions import trenitaliaValidateOptions as validateOptions, trenitaliaStations as stations
 from trenitaliaRequest import findOnewayTrains
 from trenitaliaProcessData import processData
 

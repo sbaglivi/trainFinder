@@ -20,7 +20,7 @@ def calculateMinPrice(row, passengers):
         return '/' 
 
 def findSolutionPrices(row, passengers):
-    priorityOrder = ['STANDARD', 'STANDARD AREA SILENZIO', 'PREMIUM', 'BUSINESS', 'BUSINESS AREA SILENZIO'] 
+    priorityOrder = ['STANDARD', 'STANDARD AREA SILENZIO', 'PREMIUM', 'BUSINESS', 'BUSINESS AREA SILENZIO', 'EXECUTIVE'] 
     pricesFound = {
             'young': -1,
             'senior' : -1,
