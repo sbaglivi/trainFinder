@@ -29,6 +29,8 @@ while not done:
     response = findOutgoingTrains(originId, destinationId, departureTimeString, returnTimeString, totalPassengers, offset, cookies, cartId)
     rawTrainsData = response.json()
     cookies = cookieFunctions.merge_cookies(response.cookies, cookies)
+    if not cartId:
+        cartId = rawTrainsData['cartId']
     [trainsData, done] = processData(rawTrainsData, depDateObject.strftime('%d/%m'), [adults,seniors,youngs])
     offset += 10
     allData += trainsData

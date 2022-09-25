@@ -28,7 +28,6 @@ payload = {
     "arrivalLocationId": originId,
     "departureTime": depTimeString,
     "returnDepartureTime": retTimeString,
-    #"forwardSolutionId": "x8dabd0e2-45f5-40bf-9b01-13fb6da2526f",
     "forwardSolutionId": goingoutId,
     "adults": adults+seniors+youngs,
     "children": 0,
@@ -47,7 +46,7 @@ url = "https://www.lefrecce.it/Channels.Website.BFF.WEB/website/ticket/solutions
 response = requests.request("POST", url, json=payload, cookies=cookies)
 
 data = response.json()
-processedData = processData(data, retDateObject.strftime('%d/%m'), [adults, seniors, youngs])
+[processedData, done] = processData(data, retDateObject.strftime('%d/%m'), [adults, seniors, youngs])
 for line in processedData:
     print(line)
 

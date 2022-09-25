@@ -14,18 +14,17 @@ app.get('/', (req,res) => {
 
 async function pyrun(script, options){
 	return new Promise((resolve, reject) => {
-		PythonShell.run(script, options, (pyErr, pyResults)=>{
-			try {
+		try {
+			PythonShell.run(script, options, (pyErr, pyResults)=>{
 				if (pyErr){
 					console.log('error while running '+script);
 					reject(pyErr);
 				}
 				else resolve(pyResults?.length > 0 ? pyResults[0] : [])
-			} catch (e) {
-				console.log(e.message)
-			}
-
-		})
+			})
+		} catch (e) {
+			console.log(e.message)
+		}
 	})
 }
 

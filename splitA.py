@@ -3,21 +3,15 @@ from datetime import datetime
 from validateOptions import trenitaliaStations as stations
 from trenitaliaProcessData import processData
 
-depDate = '25-09-22'
-depTime = '09'
-retDate = '25-09-22'
-retTime = '17'
+
+args = sys.argv[1:]
+[origin, destination, depDate, depTime, passengers, retDate, retTime] = args
+[adults, seniors, youngs] = list(map(int, passengers))
 depDateObject = datetime.strptime(depDate,'%d-%m-%y')
 retDateObject = datetime.strptime(retDate,'%d-%m-%y')
 depTimeString = f"{depDateObject.strftime('%Y-%m-%d')}T{depTime}:00:00.000+02:00"
 retTimeString = f"{retDateObject.strftime('%Y-%m-%d')}T{retTime}:00:00.000+02:00"
-trainDateObject = depDateObject
-passengers = '200'
-[adults, seniors, youngs] = list(map(int, passengers))
 
-args = sys.argv[1:]
-[origin, destination] = args
-totalPassengers = 2
 originId = stations[origin]
 destinationId = stations[destination]
 
