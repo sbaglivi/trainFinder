@@ -180,7 +180,7 @@ app.post('/allNoOffers', (req,res) => { // need to run 2 outgoing requests that 
 
 	let outgoingOptions = {
 		mode: 'json',
-		args: [origin, destination, date, time, returnDate, returnTime, passengers]
+		args: [origin, destination, date, time, passengers, returnDate, returnTime]
 	}
 	let returnOptions = {
 		mode: 'json',
@@ -196,9 +196,9 @@ app.post('/allNoOffers', (req,res) => { // need to run 2 outgoing requests that 
 	Promise.all([trenitaliaOutgoing, italoOutgoing, trenitaliaReturn, italoReturn])
 		.then(results => {
 			let resultValue = {
-				error: results.map(result => result.error).join(),
-				results: {outgoing: [...results[0].results, ...results[1].results], returning: [...results[2], ...results[3]]}, 
-				metadata: {italoCookies: results[1].cookies, trenitaliaCookies: results[0].cookies, cartId: results[0].cartid}
+				error: results.map(result => result.error).join(''),
+				results: {outgoing: [...results[0].results, ...results[1].results], returning: [...results[2].results, ...results[3].results]}, 
+				metadata: {italo: {cookies: results[1].cookies}, trenitalia: {cookies: results[0].cookies, cartId: results[0].cartId}}
 			}
 			res.json(resultValue)	
 		})
@@ -296,6 +296,7 @@ app.post('/return', async (req,res) => {
 			mode: 'json',
 			args: [origin, destination, date, time, passengers, returnDate, returnTime, goingoutId, cartId, JSON.stringify(cookies)]
 		}
+		console.log(options.args)
 		scriptName = 'treturn.py'
 	}
 	try {
