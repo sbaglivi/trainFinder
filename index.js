@@ -2,8 +2,11 @@ const express = require('express')
 const path = require('path')
 const app = express()
 const {PythonShell} = require('python-shell');
+const cors = require('cors');
 
+app.use(cors());
 app.use(express.json())
+
 
 let trenitaliaResultsMap = new Map();
 let italoResultsMap = new Map();
