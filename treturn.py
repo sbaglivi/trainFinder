@@ -24,10 +24,13 @@ try:
     allData = []
     done = False
 
-    response = findReturnTrains(destinationId, originId, depTimeString, retTimeString, totalPassengers, goingoutId, 0, cookies, cartId)
-    rawTrainsData = response.json()
-    [trainsData, done] = processData(rawTrainsData, retDateObject.strftime('%d/%m'), [adults,seniors,youngs])
+    while not done:
+        response = findReturnTrains(destinationId, originId, depTimeString, retTimeString, totalPassengers, goingoutId, offset, cookies, cartId)
+        rawTrainsData = response.json()
+        [trainsData, done] = processData(rawTrainsData, retDateObject.strftime('%d/%m'), [adults,seniors,youngs])
+        allData += trainsData
+        offset += 10
 
-    print(json.dumps({'error': '', 'results': trainsData}))
+    print(json.dumps({'error': '', 'results': allData}))
 except Exception as e:
     print(json.dumps({'error': repr(e)+' while running treturn.py', 'results': []}))
