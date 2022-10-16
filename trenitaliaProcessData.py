@@ -73,5 +73,6 @@ def processData(jsonData, searchedDate, passengers):
     sameDaySolutions = solutions[solutions['departureDate'] == searchedDate]
 
     solutionsDictionary = sameDaySolutions[['id', 'departureDate', 'departureTime', 'arrivalTime', 'duration', 'young', 'senior', 'adult','company', 'minPrice']].to_dict('records')
+    solutionsDictionary = solutionsDictionary[solutionsDictionary['minPrice'] != '/']
     foundNextDaySolutions = solutions.shape[0] > sameDaySolutions.shape[0]
     return [solutionsDictionary, foundNextDaySolutions]

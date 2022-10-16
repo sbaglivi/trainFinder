@@ -41,10 +41,7 @@ def getDataFromHtml(html, passengers, searchedTime): # passenger is just a numbe
         trainData['minPrice'] = round(minPrice*passengers,2)
         trainData['company'] = 'italo'
         #trainData['prices'] = prices
-        allTrains.append(trainData)
+        if minPrice != -1:
+            allTrains.append(trainData)
     afterDesiredTime = list(filter(lambda train: compareDepartureTime(train, searchedTime), allTrains))
     return afterDesiredTime
-
-def dataFromFile(filePath, passengers):
-    with open(filePath, 'r') as htmlFile:
-        return getDataFromHtml(htmlFile, passengers)
