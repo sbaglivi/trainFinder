@@ -167,7 +167,7 @@ app.post('/outgoingOnly', async (req,res) => { // 2 simple requests, return only
 
 	Promise.all([trenitaliaResult, italoResult])
 		.then(results => {
-			fs.writeFile(path.join(__dirname, "log.txt"), "Sending back "+ (results[0].length + results[1].length) +" results for 'outgoingOnly' request\n", {'flag':'a'}, err => {
+			fs.writeFile(path.join(__dirname, "log.txt"), "Sending back "+ results[0].length +" results for 'outgoingOnly' request\n", {'flag':'a'}, err => {
 				if (err) throw err;
 			});
 			res.json({
