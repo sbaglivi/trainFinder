@@ -6,6 +6,13 @@ import sys, json
 from datetime import datetime
 
 try:
+    
+    # REMOVE ME ME
+    print(json.dumps({'error': '', 'results': []}))
+    return;
+
+
+
     args = sys.argv[1:]
     if (not validateOptions(args)):
         sys.exit()
