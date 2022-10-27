@@ -45,7 +45,7 @@ async function getTrainResults(script, options, map, mapId){
 		return map.get(mapId).data
 	} else {
 		try {
-			let results = await pyrun(path.join(__dirname,script), options);
+			let results = await pyrun(script, options);
 			if (results.length === 0) throw Error('Found no trains on '+script+' for desired time\n');
 			map.set(mapId, {requestTime: secondsSinceEpoch, data: results});
 			// return {error: null, results}
@@ -144,6 +144,7 @@ app.post('/aerr', async (req,res) => {
 })
 
 app.post('/outgoingOnly', async (req,res) => { // 2 simple requests, return only results
+
 	const {origin, destination, dateTime, passengers} = req.body;
 	let [date, time] = dateTime.split(' ');
 	date = date.replaceAll('/','-');
