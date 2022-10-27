@@ -21,6 +21,12 @@ app.get('/try', (req,res) => {
 	res.send("Other urls work as well");
 })
 
+function logToFile(text){
+	fs.writeFile(path.join(__dirname, "log.txt"), text+'\n', {'flag': 'a'}, err => {
+		if (err) throw err;
+	});
+}
+
 async function pyrun(script, options){
 	return new Promise((resolve, reject) => {
 		try {
@@ -30,6 +36,7 @@ async function pyrun(script, options){
 			PythonShell.run(path.join(__dirname, script), options, (pyErr, pyResults)=>{
 				if (pyErr){
 					console.log('error while running '+script);
+					logToFile('Error:'+pyErr)
 					reject(pyErr);
 				}
 				else resolve(pyResults?.length > 0 ? pyResults[0] : [])
