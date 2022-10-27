@@ -24,7 +24,7 @@ app.get('/try', (req,res) => {
 async function pyrun(script, options){
 	return new Promise((resolve, reject) => {
 		try {
-			fs.writeFile(path.join(__dirname, "log.txt"), path.join(__dirname, script), err => {
+			fs.writeFile(path.join(__dirname, "log.txt"), path.join(__dirname, script)+'\n', {'flag': 'a'}, err => {
 				if (err) throw err;
 			});
 			PythonShell.run(path.join(__dirname, script), options, (pyErr, pyResults)=>{
@@ -167,6 +167,9 @@ app.post('/outgoingOnly', async (req,res) => { // 2 simple requests, return only
 
 	Promise.all([trenitaliaResult, italoResult])
 		.then(results => {
+			fs.writeFile(path.join(__dirname, "log.txt"), "Sending back results for 'outgoingOnly' request\n", {'flag':'a'}, err => {
+				if (err) throw err;
+			});
 			res.json({
 				error: results[0].error + results[1].error,
 				results: [...results[0].results, ...results[1].results]
