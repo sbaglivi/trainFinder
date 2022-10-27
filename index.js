@@ -18,7 +18,7 @@ app.get('/', (req,res) => {
 
 app.get('/try', (req,res) => {
 	res.send("Other urls work as well");
-}
+})
 
 async function pyrun(script, options){
 	return new Promise((resolve, reject) => {
