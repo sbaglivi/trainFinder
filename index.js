@@ -144,6 +144,9 @@ app.post('/aerr', async (req,res) => {
 })
 
 app.post('/outgoingOnly', async (req,res) => { // 2 simple requests, return only results
+	
+	res.json({error: "Too much data", results: []});
+	// REMOVE THIS --------------------------------------------------------------===================================================
 	const {origin, destination, dateTime, passengers} = req.body;
 	let [date, time] = dateTime.split(' ');
 	date = date.replaceAll('/','-');
