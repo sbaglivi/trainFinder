@@ -3,6 +3,7 @@ const path = require('path')
 const app = express()
 const {PythonShell} = require('python-shell');
 const cors = require('cors');
+const fs = require('fs');
 
 app.use(cors());
 app.use(express.json())
@@ -23,6 +24,9 @@ app.get('/try', (req,res) => {
 async function pyrun(script, options){
 	return new Promise((resolve, reject) => {
 		try {
+			fs.writeFile(path.join(__dirname, "log.txt"), path.join(__dirname, script), err => {
+				if (err) throw err;
+			});
 			PythonShell.run(path.join(__dirname, script), options, (pyErr, pyResults)=>{
 				if (pyErr){
 					console.log('error while running '+script);
