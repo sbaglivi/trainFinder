@@ -12,7 +12,8 @@ let trenitaliaResultsMap = new Map();
 let italoResultsMap = new Map();
 
 app.get('/', (req,res) => {
-	res.sendFile(path.join(__dirname, 'index.html'))
+//	res.sendFile(path.join(__dirname, 'index.html'))
+	res.send("Hello World");
 })
 
 async function pyrun(script, options){
